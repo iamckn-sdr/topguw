@@ -26,6 +26,7 @@
  */
 package gsm.tools;
 
+import gsm.conf.Configuration;
 import gsm.gui.Principal;
 
 import java.io.BufferedReader;
@@ -39,18 +40,17 @@ import java.util.regex.Matcher;
  *
  * @author Enjalbert Bastien
  */
-@SuppressWarnings("serial")
 public class Dedicated extends Principal {
 
     /**
-     * Convert ArrayList<String> into ArrayList<String[]> (split with spaces)
-     *
+     * Convert an arraylist of string into an arraylist of String array
+     * we split the string with spaces
      * @param inLine
      * @return splitted line into an ArrayList
      */
     public static ArrayList<String[]> lignesToTab(ArrayList<String> inLine) {
 
-        ArrayList<String[]> framesEnTab = new ArrayList<String[]>();
+        ArrayList<String[]> framesEnTab = new ArrayList<>();
         for (int i = 0; i < inLine.size(); i++) {
             framesEnTab.add(ligneToTab(inLine.get(i)));
         }
@@ -63,7 +63,7 @@ public class Dedicated extends Principal {
      * @param line the line to split
      * @return the splitted line into an array
      */
-    public static String[] ligneToTab(String ligne) {
+    public static String[] ligneToTab(String line) {
 
         /* Array are like this (with dedicated channel [ S config with airprobe])
          * 
@@ -80,7 +80,7 @@ public class Dedicated extends Principal {
          * 2-25     | hex frame 
          */
         String[] splitArray = null;
-        splitArray = ligne.split(" ");
+        splitArray = line.split(" ");
 
         return splitArray;
     }
@@ -92,11 +92,11 @@ public class Dedicated extends Principal {
      * @return
      */
     public static ArrayList<String[]> getSysInfo(ArrayList<String[]> inArray) {
-        ArrayList<String[]> si = new ArrayList<String[]>();
+        ArrayList<String[]> si = new ArrayList<>();
 
         boolean si5getted = false;
-        boolean si6getted = false;
-        boolean si5tergetted = false;
+        //boolean si6getted = false;
+        //boolean si5tergetted = false;
 
         for (int i = 0; i < inArray.size(); i++) {
             if (inArray.get(i).length == 25) {
@@ -172,11 +172,11 @@ public class Dedicated extends Principal {
      * @return
      */
     public static ArrayList<String[]> getCipherModCmd(ArrayList<String[]> inArray) {
-        ArrayList<String[]> ciphModCmd = new ArrayList<String[]>();
+        ArrayList<String[]> ciphModCmd = new ArrayList<>();
 
         for (int i = 0; i < inArray.size(); i++) {
             if (inArray.get(i).length == 25) {
-                // 
+  
                 if (inArray.get(i)[5].equals("06")
                         && inArray.get(i)[6].equals("35")) {
                     String[] temp = new String[2];
@@ -211,8 +211,7 @@ public class Dedicated extends Principal {
         int localDedicatedChannelFn = 0;
 
         ArrayList<String[]> cipheredSi = new ArrayList<>();
-		// TODO : mettre le bouton grisé tant que les deux test d'avant n'ont pas été lancé
-        // mieux niveau IHM
+
         if (systemInfo == null || cipherModCommand == null) {
             throw new Exception(START_LINE + "Error : you have to find SI cleartext and Ciphering Mode Command position before.\n");
         } else {
@@ -221,6 +220,8 @@ public class Dedicated extends Principal {
                     
                     if (dedicatedChannelTab.get(j).length == 4 // check the frame is correct (not an error or other thing)
                             && General.isInteger(dedicatedChannelTab.get(j)[1])
+                            // current frame is not an unecrypted SI 5
+                            && Integer.parseInt(dedicatedChannelTab.get(j)[1]) != Integer.parseInt(systemInfo.get(i)[0])
                             // if frames(unencrypted and possible encrypted) are in the same place in the multi frame
                             && ((Integer.parseInt(dedicatedChannelTab.get(j)[1]) - Integer.parseInt(systemInfo.get(i)[0])) % 204  == 0)) {
                         
@@ -319,7 +320,7 @@ public class Dedicated extends Principal {
 
         for (int i = 0; finish == false && i < dedicatedChannelTab.size(); i++) {
             String[] line = dedicatedChannelTab.get(i);
-            // check element from array is a ccch frame burst
+            // check element from array is a frame burst
             if (line.length == 4 && line[0].length() == 2 && General.isInteger(line[1])
                 && (Integer.parseInt(line[1]) <= 2715647 || Integer.parseInt(line[1]) > 0)
                      && line[0].charAt(0) == 'C') {
@@ -367,7 +368,7 @@ public class Dedicated extends Principal {
         hexaFrameNoTA.setCharAt(3, '0');
         ProcessBuilder pb = new ProcessBuilder("./gsmframecoder", hexaFrameNoTA.toString());
         pb.redirectErrorStream(true);
-        pb.directory(gsmFrameCoder);
+        pb.directory(Configuration.gsmFrameCoder);
         Process p = pb.start();
 
         p.getOutputStream().flush();

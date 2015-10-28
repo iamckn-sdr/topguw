@@ -74,7 +74,7 @@ public class Principal extends JPanel {
 
     protected static JTextArea localCmd;
 
-    // the cfile
+    // the bin/cfile
     protected static File file;
 
     /**
@@ -124,14 +124,7 @@ public class Principal extends JPanel {
      */
     private JFrame frmTopguw;
 
-    /**
-     * ******** CONFIG ************
-     */
-    // gsm-receive Path from Airprobe
-    protected static File gsmReceivePath = new File("/root/airprobe/gsm-receiver/");
-    // gsmframecoder Path (test folder) 
-    protected static File gsmFrameCoder = new File("/root/gsmframecoder/gsmframecoder/test/");
-
+    
     /**
      * ************************************** BEGINNING
      * ***********************************
@@ -186,7 +179,7 @@ public class Principal extends JPanel {
         localCmd.setEditable(false);
         localCmd.setBounds(57, 145, 700, 255);
         localCmd.setText("Welcome on Topguw, a help to analyze GSM.\n");
-        localCmd.setText("Topguw is currently in beta version.\n");
+        localCmd.append("Topguw is currently in beta version.\n");
         localCmd.append("Bastien Enjalbert, bastien.enjalbert@gmail.com\n\n");
         localCmd.setLineWrap(true);
         localCmd.setWrapStyleWord(true);
@@ -233,7 +226,7 @@ public class Principal extends JPanel {
         sliderGainKal.setVisible(false);
 
         /**
-         * ************** DEFINITION BROWSE FILE .. ****************
+         * ************** BROWSE FILE ****************
          */
         JFileChooser cfile_file = new JFileChooser();
         cfile_file.setVisible(false);
@@ -322,7 +315,7 @@ public class Principal extends JPanel {
                 localCmd.append(START_LINE + "Start getting Ciphering Mode Command, please wait...\n");
                 localCmd.update(localCmd.getGraphics());
                 ArrayList<String[]> cipherModPosition = Dedicated.getCipherModCmd(dedicatedChannelTab);
-                if (cipherModPosition.size() == 0) {
+                if (cipherModPosition.isEmpty()) {
                     localCmd.append(START_LINE + "Sorry but no Ciphering Mode Command have been discovered.\n");
                     localCmd.append(START_LINE + "Maybe you should sniff longer the GSM tower.\n");
                     localCmd.update(localCmd.getGraphics());
@@ -354,10 +347,10 @@ public class Principal extends JPanel {
                 localCmd.update(localCmd.getGraphics());
 
                 // TODO : check if encryptedSiPosition is initialized (ou dans la méthode ?)
-                ArrayList<String[]> possibleKeystream = new ArrayList<String[]>();
+                ArrayList<String[]> possibleKeystream = new ArrayList<>();
 
                 /* Contains bursts from extracted SI (5/5ter/6) */
-                ArrayList<String[]> plaintextBursts = new ArrayList<String[]>();
+                ArrayList<String[]> plaintextBursts = new ArrayList<>();
 
                 // get bursts without time advance
                 for (int i = 0; i < systemInfo.size(); i++) {
@@ -392,7 +385,7 @@ public class Principal extends JPanel {
                                 }
                                 possibleKeystream.add(temp);
                             } catch (NumberFormatException e2) {
-                                localCmd.append(START_LINE + "An error happend when we try to extract keystream, sorry. \n");
+                                localCmd.append(START_LINE + "Sorry, an error happened while trying to extract keystream. \n");
                                 localCmd.update(localCmd.getGraphics());
                             }
                             /**
@@ -472,7 +465,7 @@ public class Principal extends JPanel {
         /**
          * OPEN CFILE BUTTON
          */
-        JButton btnOuvrirCfile = new JButton("Open cfile ...");
+        JButton btnOuvrirCfile = new JButton("Open a file ...");
         btnOuvrirCfile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 cfile_file.setVisible(true);
@@ -481,7 +474,22 @@ public class Principal extends JPanel {
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
 
                     setFile(cfile_file.getSelectedFile());
-
+                    
+                    if (JOptionPane.showConfirmDialog(null, "Is the file is a cfile ?", "Cfile or Binary file",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)
+                        == JOptionPane.YES_OPTION) {
+                    } else {
+                        localCmd.append(START_LINE + "Converting the binary file into a cfile, please wait...\n");
+                        localCmd.update(localCmd.getGraphics());
+                        try {
+                            General.binToCfile(file);
+                        } catch (IOException ex) {
+                            localCmd.append(START_LINE + "Sorry, an error happened while trying to converting the file.\n");
+                            localCmd.update(localCmd.getGraphics());
+                        }
+                        
+                    }
+                    
                     try {
                         localCmd.append(START_LINE + "Getting channel outputs for the cfile, please wait...\n");
                         localCmd.update(localCmd.getGraphics());
@@ -501,13 +509,13 @@ public class Principal extends JPanel {
                             General.getAirprobeOutput(file);
                         }
                     } catch (Exception e1) {
-                        localCmd.append(START_LINE + "An error occur when trying to clean the output for CCCH chanel : \n");
+                        localCmd.append(START_LINE + "An error occur when trying to clean the output for dedicated chanel : \n");
                         localCmd.append(START_LINE + e1.getMessage());
                         localCmd.update(localCmd.getGraphics());
                     }
 
                     // Clean the output file if user wants
-                    if (JOptionPane.showConfirmDialog(null, "Do you want to try to correct go.sh output for CCCH Chanel?\nIt will help to analyze GSM datas.", "Correct datas?",
+                    if (JOptionPane.showConfirmDialog(null, "Do you want to try to correct go.sh output for dedicated Chanel?\nIt will help to analyze GSM datas.", "Correct datas?",
                             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE)
                             == JOptionPane.YES_OPTION) {
                         localCmd.append(START_LINE + "Making dirty cleaner, please wait...\n");
@@ -588,8 +596,7 @@ public class Principal extends JPanel {
                             localCmd.append(START_LINE + "Maybe kalibrate-rtl is not working correctly too.\n");
                         }
 
-                    // Start sniffing
-                        // TODO snif with "rtl_sdr" command from kali
+                        // Start sniffing
                     }
                     Process p = General.rtlSdrSnif(System.getProperty("user.dir"), frequency, Integer.toString(sliderGainKal.getValue()), "1e6").start();
 
@@ -649,10 +656,9 @@ public class Principal extends JPanel {
                         sliderGainKal.setVisible(true);
                         mnGsmBand.setVisible(true);
                         btnGo.setVisible(true);
-                        localCmd.append(START_LINE + "Frequency " + fr + "is correctly settup.\n");
+                        localCmd.append(START_LINE + "Frequency " + fr + " is correctly setup.\n");
                     } else {
                         localCmd.append(START_LINE + "Specified frequency seems not to be valid.\n");
-
                     }
                     localCmd.update(localCmd.getGraphics());
                 }
@@ -669,20 +675,30 @@ public class Principal extends JPanel {
         btnConfigure.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
 
-                JTextField gsmReceivePathChamp = new JTextField(gsmReceivePath.toString());
-                JTextField gsmFrameCoderPathChamp = new JTextField(gsmFrameCoder.toString());
+                JTextField gsmReceivePathChamp = new JTextField(Configuration.gsmReceivePath.toString());
+                JTextField gsmFrameCoderPathChamp = new JTextField(Configuration.gsmFrameCoder.toString());
+                JTextField gsmDecimalRate = new JTextField(Configuration.DEC_RATE.toString());
+                JTextField gsmBroadcastType = new JTextField(Configuration.BTSCONF.toString());
                 JPanel config = new JPanel(new GridLayout(0, 1));
                 config.add(new JLabel("Path for gsm-receive folder (airprobe):"));
                 config.add(gsmReceivePathChamp);
 
                 config.add(new JLabel("Path for gsmframecoder (test) folder :"));
                 config.add(gsmFrameCoderPathChamp);
+                
+                config.add(new JLabel("Decimal rate :"));
+                config.add(gsmDecimalRate);
+                
+                config.add(new JLabel("BTS Broadcast channel conf :"));
+                config.add(gsmBroadcastType);                
 
                 int result = JOptionPane.showConfirmDialog(null, config, "Configuration",
                         JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
                 if (result == JOptionPane.OK_OPTION) {
-                    gsmReceivePath = new File(gsmReceivePathChamp.getText());
-                    gsmFrameCoder = new File(gsmFrameCoderPathChamp.getText());
+                    Configuration.gsmReceivePath = new File(gsmReceivePathChamp.getText());
+                    Configuration.gsmFrameCoder = new File(gsmFrameCoderPathChamp.getText());
+                    Configuration.DEC_RATE = gsmDecimalRate.getText();
+                    Configuration.BTSCONF = gsmBroadcastType.getText();
                     localCmd.append(START_LINE + "Configuration has successfuly changed.\n");
                 } else {
                 }

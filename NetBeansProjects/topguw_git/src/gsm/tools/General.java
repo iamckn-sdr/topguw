@@ -442,7 +442,7 @@ public class General extends Principal {
         //if(!(f.exists() && !f.isDirectory())) {  
         // Extract 
         ProcessBuilder pb = new ProcessBuilder("sh", "go.sh", file.getAbsolutePath(), Configuration.DEC_RATE, Configuration.BTSCONF);
-        pb.directory(new File(gsmReceivePath + "/src/python/"));
+        pb.directory(new File(Configuration.gsmReceivePath + "/src/python/"));
         pb.redirectOutput(new File(file.getAbsolutePath() + "_" + Configuration.BTSCONF));
 
         // avoid infinite time out with big cfile
@@ -475,7 +475,7 @@ public class General extends Principal {
                         Configuration.DEC_RATE,
                         timeslot + "S"
                 );
-                pb.directory(new File(gsmReceivePath + "/src/python/"));
+                pb.directory(new File(Configuration.gsmReceivePath + "/src/python/"));
                 pb.redirectOutput(new File(file.getAbsolutePath() + "_" + timeslot + "S"));
                 pb.redirectErrorStream(true);
                 p = pb.start();
@@ -505,6 +505,9 @@ public class General extends Principal {
         xoredBursts[9] = fnEnc;
 
         StringBuilder oneXoredBurst;
+        
+        // number of bursts that cannot be xored
+        int imposs = 0;
 
         for (int j = 0; j < 4; j++) {
             if (isABurst(beginBursts[j]) && isABurst(endBursts[j])) {
@@ -515,9 +518,14 @@ public class General extends Principal {
                 xoredBursts[j] = oneXoredBurst.toString();
                 
             } else {
+                imposs++;
                 xoredBursts[j] = "Incorrect bursts from capture, can't xor them.";
             }
         }
+        
+        if(imposs >= 3) 
+            return new String[0];
+        
         // add a5/1 frame number from encrypted frame to simplify crack steps
         for(int i = 4; i < 8 ;i++) {
             if(isInteger(endBursts[i])) {

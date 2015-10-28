@@ -26,6 +26,8 @@
  */
 package gsm.conf;
 
+import java.io.File;
+
 /**
  * General configuration for the application
  * @author bastien enjalbert
@@ -36,11 +38,17 @@ public class Configuration {
      * Decimation rate for airprobe 
      * For example a rtl-sdr device works with 64
      */
-    public static final String DEC_RATE = "64";
+    public static String DEC_RATE = "64";
 
     /**
      * BTS Configuration (0C -> combined , 0B -> non-combined)
      */
-    public static final String BTSCONF = "0B";
+    public static String BTSCONF = "0B";
+    
+    // gsm-receive Path from Airprobe
+    public static File gsmReceivePath = new File("/root/airprobe/gsm-receiver/");
+    // gsmframecoder Path (test folder) 
+    public static File gsmFrameCoder = new File("/root/gsmframecoder/gsmframecoder/test/");
+
     
 }
